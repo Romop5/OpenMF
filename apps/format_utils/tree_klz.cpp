@@ -1,8 +1,9 @@
 #include <iostream>
-#include <klz/parser.hpp>
-#include <loggers/console.hpp>
+#include <klz/parser_klz.hpp>
+#include <utils/logger.hpp>
 #include <cxxopts.hpp>
 #include <vector>
+#include <vfs/vfs.hpp>
 
 #define KLZ_MODULE_STR "KLZ util"
 
@@ -72,20 +73,19 @@ int main(int argc, char** argv)
 
     if (arguments.count("i") < 1)
     {
-        MFLogger::ConsoleLogger::fatal("Expected file.", KLZ_MODULE_STR);
+        MFLogger::Logger::fatal("Expected file.", KLZ_MODULE_STR);
         std::cout << options.help() << std::endl;
         return 1;
     }
 
     std::string inputFile = arguments["i"].as<std::string>();
 
+    auto fs = MFFile::FileSystem::getInstance();
     std::ifstream f;
 
-    f.open(inputFile, std::ios::binary);
-
-    if (!f.is_open())
+    if (!fs->open(f, inputFile))
     {
-        MFLogger::ConsoleLogger::fatal("Could not open file " + inputFile + ".", KLZ_MODULE_STR);
+        MFLogger::Logger::fatal("Could not open file " + inputFile + ".", KLZ_MODULE_STR);
         return 1;
     }
 

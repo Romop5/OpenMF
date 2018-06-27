@@ -1,5 +1,5 @@
 <div align="center">
-    <a href="https://github.com/OpenMafia/openmf"><img src="https://user-images.githubusercontent.com/9026786/34917841-b21b66d4-f94b-11e7-93c0-caf1b58c5a4a.png" alt="OpenMF" /></a>
+    <a href="https://github.com/OpenMafia/openmf"><img src="https://cdn.discordapp.com/attachments/437558384380739619/437559542176415784/banner.png" alt="OpenMF" /></a>
 </div>
 
 <div align="center">
@@ -44,4 +44,9 @@ The project is in very early stage and at the moment can offer libraries for loa
 
 If you'd like to join us and contribute, see [development.md](https://github.com/OpenMafia/OpenMF/tree/master/docs/development.md).
 
+## Demonstration
+<a href="https://www.youtube.com/watch?v=gneJTc8AixI">![OpenMF Physics fun](https://cdn.discordapp.com/attachments/232829242541473793/405718157005946882/Artboard.png)</a>
+
+## Screenshots    
 ![](https://github.com/OpenMafia/openmf/blob/master/resources/screens.jpg?raw=true)
+![](https://i.imgur.com/41q3JQe.gif)

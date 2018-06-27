@@ -1,8 +1,8 @@
 #include <iostream>
-#include <scene2_bin/parser.hpp>
-#include <loggers/console.hpp>
+#include <scene2_bin/parser_scene2bin.hpp>
+#include <utils/logger.hpp>
 #include <vfs/vfs.hpp>
-#include <utils.hpp>
+#include <utils/openmf.hpp>
 #include <cxxopts.hpp>
 
 using namespace MFLogger;
@@ -21,6 +21,11 @@ TypeName const gObjectTypeNames[] = {
     {0x0C, "OBJECT_TYPE_OCCLUDER"},
     {0x99, "OBJECT_TYPE_SECTOR"},
     {0x9B, "OBJECT_TYPE_SCRIPT"},
+};
+
+TypeName const gSpecialObjectTypeNames[] = {
+    { 0x00, "TYPE_NONE" },
+    { 0x23, "TYPE_PHYSICAL" },
 };
 
 TypeName const gLightTypeNames[] = {
@@ -43,45 +48,66 @@ char const *getTypeName(size_t count, TypeName const *typeNames, uint32_t objTyp
     return defaultType;
 }
 
-void dump(MFFormat::DataFormatScene2BIN scene2Bin, uint32_t objType)
+// draft
+
+void dump(MFFormat::DataFormatScene2BIN scene2Bin, uint32_t objType, uint32_t specialObjType)
 {
-    ConsoleLogger::raw("view distance: " + std::to_string(scene2Bin.getViewDistance()) + ",", "dump");
-    ConsoleLogger::raw("field of view: " + std::to_string(scene2Bin.getFov()) + ",", "dump");
-    ConsoleLogger::raw("clipping planes: [" + scene2Bin.getClippingPlanes().str() + "],", "dump");
-    ConsoleLogger::raw("number of objects: " + std::to_string(scene2Bin.getNumObjects()) + ",", "dump");
-    ConsoleLogger::raw("", "dump");
+    using namespace MFUtil;
+    std::cout << "{" << std::endl;
+    dumpValue("viewDistance", std::to_string(scene2Bin.getViewDistance()), 1, false);
+    dumpValue("fieldOfView", std::to_string(scene2Bin.getFov()), 1, false);
+    dumpValue("clippingPlanes", scene2Bin.getClippingPlanes().str(), 1, false);
+    dumpValue("numberOfObjects", std::to_string(scene2Bin.getNumObjects()), 1, false);
+    std::cout << "    \"objects\": ["<< std::endl;
 
     for (auto pair : scene2Bin.getObjects())
     {
         auto object = pair.second;
-
         if (object.mType != objType && objType != 0) continue;
+        if (object.mSpecialType != specialObjType && specialObjType != 0) continue;
 
-        ConsoleLogger::raw("\tobject name: " + object.mName + " {", "dump");
-        ConsoleLogger::raw("\t\ttype: " + std::string(getTypeName(7, gObjectTypeNames, object.mType)) + "(" + std::to_string(object.mType) + "),", "dump");
-        ConsoleLogger::raw("\t\tposition: [" + object.mPos.str() + "],", "dump");
-        ConsoleLogger::raw("\t\tposition2: [" + object.mPos2.str() + "],", "dump");
-        ConsoleLogger::raw("\t\trotation: [" + object.mRot.str() + "],", "dump");
-        ConsoleLogger::raw("\t\tscale: [" + object.mScale.str() + "],", "dump");
-        ConsoleLogger::raw("\t\tparent name: " + object.mParentName + ",", "dump");
+        std::cout << "        {\n";
+
+        dumpValue("objectName", object.mName, 3);
+        dumpValue("type", std::string(getTypeName(sizeof(gObjectTypeNames) / sizeof(gObjectTypeNames[0]), gObjectTypeNames, object.mType)), 3);
+        dumpValue("typeRaw", std::to_string(object.mType), 3, false);
+        dumpValue("specialType", std::string(getTypeName(sizeof(gSpecialObjectTypeNames) / sizeof(gSpecialObjectTypeNames[0]), gSpecialObjectTypeNames, object.mSpecialType)), 3);
+        dumpValue("specialTypeRaw", std::to_string(object.mSpecialType), 3, false);
+        dumpValue("position", object.mPos.str(), 3, false);
+        dumpValue("position2", object.mPos2.str(), 3, false);
+        dumpValue("rotation", object.mRot.str(), 3, false);
+        dumpValue("scale", object.mScale.str(), 3, false);
+        dumpValue("parentName", object.mParentName, 3, true);
 
         if (object.mType == MFFormat::DataFormatScene2BIN::OBJECT_TYPE_MODEL)
-            ConsoleLogger::raw("\t\tmodel name: " + object.mModelName + ",", "dump");
+            dumpValue("modelName", object.mModelName, 3, true);
+
+        if (object.mSpecialType == MFFormat::DataFormatScene2BIN::SPECIAL_OBJECT_TYPE_PHYSICAL) {
+            auto props = object.mSpecialProps;
+            
+            dumpValue("movVal1", std::to_string(props.mMovVal1), 3, false);
+            dumpValue("movVal2", std::to_string(props.mMovVal2), 3, false);
+            dumpValue("friction", std::to_string(props.mFriction), 3, false);
+            dumpValue("movVal4", std::to_string(props.mMovVal4), 3, false);
+            dumpValue("movVal5", std::to_string(props.mMovVal5), 3, false);
+            dumpValue("weight", std::to_string(props.mWeight), 3, false);
+            dumpValue("sound", std::to_string(props.mSound), 3, false);
+        }
         
         if (object.mType == MFFormat::DataFormatScene2BIN::OBJECT_TYPE_LIGHT)
         {
-            ConsoleLogger::raw("\t\tlight properties {", "dump");
-            ConsoleLogger::raw("\t\t\tlight type: " + std::string(getTypeName(5, gLightTypeNames, object.mLightType)) + "(" + std::to_string(object.mLightType) + "),", "dump");
-            ConsoleLogger::raw("\t\t\tlight colour: [" + object.mLightColour.str() + "],", "dump");
-            ConsoleLogger::raw("\t\t\tlight power: " + std::to_string(object.mLightPower), "dump");
-            ConsoleLogger::raw("\t\t\tlight unk0: " + std::to_string(object.mLightUnk0) + ",", "dump");
-            ConsoleLogger::raw("\t\t\tlight unk1: " + std::to_string(object.mLightUnk1) + ",", "dump");
-            ConsoleLogger::raw("\t\t\tlight near: " + std::to_string(object.mLightNear) + ",", "dump");
-            ConsoleLogger::raw("\t\t\tlight far: " + std::to_string(object.mLightFar) + ",", "dump");
-            ConsoleLogger::raw("\t\t}", "dump");
+            dumpValue("lightType", std::string(getTypeName(5, gLightTypeNames, object.mLightType)), 3);
+            dumpValue("lightTypeRaw", std::to_string(object.mLightType), 3, false);
+            dumpValue("lightColour", object.mLightColour.str(), 3, false);
+            dumpValue("lightPower", std::to_string(object.mLightPower), 3, false);
+            dumpValue("lightUnk0", std::to_string(object.mLightUnk0), 3, false);
+            dumpValue("lightUnk1", std::to_string(object.mLightUnk1), 3, false);
+            dumpValue("lightNear", std::to_string(object.mLightNear), 3, false);
+            dumpValue("lightFar", std::to_string(object.mLightFar), 3, false);
         }
-        ConsoleLogger::raw("\t}", "dump");
+        std::cout << "        },\n";
     }
+    std::cout << "    ],\n}" << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -91,10 +117,11 @@ int main(int argc, char** argv)
     options.add_options()
         ("h,help","Display help and exit.")
         ("i,input","Specify input file name.",cxxopts::value<std::string>())
-        ("t,type","Specify object type.",cxxopts::value<int>());
+        ("t,type","Specify object type.",cxxopts::value<int>())
+        ("s,stype", "Specify special object type.", cxxopts::value<int>());
 
-    options.parse_positional({"i","t"});
-    options.positional_help("file [type]");
+    options.parse_positional({"i","t","s"});
+    options.positional_help("file [type] [special type]");
     auto arguments = options.parse(argc,argv);
 
     if (arguments.count("h") > 0)
@@ -105,19 +132,19 @@ int main(int argc, char** argv)
 
     if (arguments.count("i") < 1)
     {
-        MFLogger::ConsoleLogger::fatal("Expected file.", "dump");
+        MFLogger::Logger::fatal("Expected file.");
         std::cout << options.help() << std::endl;
         return 1;
     }
 
     std::string inputFile = arguments["i"].as<std::string>();
 
+    auto fs = MFFile::FileSystem::getInstance();
     std::ifstream f;
-    f.open(inputFile, std::ios::binary);
 
-    if (!f.is_open())
+    if (!fs->open(f, inputFile))
     {
-        ConsoleLogger::fatal("Could not open file " + inputFile + ".", "dump");
+        MFLogger::Logger::fatal("Could not open file " + inputFile + ".");
         return 1;
     }
 
@@ -127,16 +154,19 @@ int main(int argc, char** argv)
 
     if (!success)
     {
-        ConsoleLogger::fatal("Could not parse file " + inputFile + ".", "dump");
+        MFLogger::Logger::fatal("Could not parse file " + inputFile + ".");
         return 1;
     }
 
-    uint32_t objType = 0;
+    uint32_t objType = 0, specialObjType = 0;
 
     if (arguments.count("t") >= 1)
         objType = arguments["t"].as<int>();
 
-    dump(scene2Bin, objType);
+    if (arguments.count("s") >= 1)
+        specialObjType = arguments["s"].as<int>();
+
+    dump(scene2Bin, objType, specialObjType);
 
     return 0;
 }
