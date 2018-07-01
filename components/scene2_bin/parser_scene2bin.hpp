@@ -48,6 +48,7 @@ public:
         OBJECT_LIGHT_RANGE = 0x4044,
         OBJECT_LIGHT_FLAGS = 0x4045,
         OBJECT_LIGHT_SECTOR= 0x4046,
+        OBJECT_LIGHT_MAP = 0x40A0,
         OBJECT_SPECIAL_DATA= 0xAE24,
     } ObjectProperty;
 
@@ -79,6 +80,25 @@ public:
         LIGHT_TYPE_POINT_AMBIENT = 0x06,
         LIGHT_TYPE_LAYERED_FOG = 0x08,
     } LightType;
+
+    typedef enum {
+        LIGHTMAP_TYPE_VERTEX = 0x5,
+        LIGHTMAP_TYPE_MAP = 0x6
+    } LightmapType;
+
+    #pragma pack(push, 1)
+    typedef struct {
+        uint8_t mLightmapVersion;   
+        uint8_t mTypeOfLightmap;              
+        uint32_t mNuberOfParts;     
+        float mUnkA;             
+        float mUnkB;             
+        uint8_t mLevelId;        
+    } LightmapGeneralData;
+    #pragma pack(pop)
+
+
+
 
     #pragma pack(push, 1)
     typedef struct

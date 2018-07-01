@@ -15,6 +15,7 @@ typedef enum
     LOG_VERBOSITY_INFO =  1,
     LOG_VERBOSITY_WARN =  2,
     LOG_VERBOSITY_FATAL = 4,
+    LOG_VERBOSITY_ALL = ~(0),
 } LogVerbosity;
 
 class Logger

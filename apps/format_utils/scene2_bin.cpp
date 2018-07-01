@@ -112,6 +112,7 @@ void dump(MFFormat::DataFormatScene2BIN scene2Bin, uint32_t objType, uint32_t sp
 
 int main(int argc, char** argv)
 {
+    MFLogger::Logger::setVerbosityFlags(MFLogger::LogVerbosity::LOG_VERBOSITY_ALL);
     cxxopts::Options options("scene2_bin","CLI utility for Mafia scene2.bin format.");
 
     options.add_options()
@@ -165,6 +166,8 @@ int main(int argc, char** argv)
 
     if (arguments.count("s") >= 1)
         specialObjType = arguments["s"].as<int>();
+
+    std::cout << "Dumping file " <<  inputFile << std::endl;
 
     dump(scene2Bin, objType, specialObjType);
 

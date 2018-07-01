@@ -226,6 +226,161 @@ void DataFormatScene2BIN::readObject(std::ifstream &srcFile, Header* header, Obj
             object->mParentName = parentObject.mName;
         }
         break;
+
+        case OBJECT_LIGHT_MAP:
+        {
+            uint8_t bitmapOfLevelOfDetails;
+            read(srcFile, &bitmapOfLevelOfDetails);
+
+            // if no lightmap is present for this object
+            if(bitmapOfLevelOfDetails == 0)
+                break;
+
+            unsigned char countOfLightmaps = 0;
+            // count the number of lightmap levels
+            uint8_t temporaryBitmap = bitmapOfLevelOfDetails;
+            std::cout << "Bitmap: ";
+            while(temporaryBitmap!= 0)
+            {
+                std::cout << (int) (temporaryBitmap & 1);
+                if((temporaryBitmap & 1) == 1)
+                    countOfLightmaps++;
+                temporaryBitmap >>=1;
+            }
+            std::cout << "\n";
+
+            std::cout << "Count of ligtmaps: " << (int) countOfLightmaps << "\n";
+            for(unsigned char i = 0; i < countOfLightmaps; i++)
+            {
+                // read general data which are common for both BMP / vertex lightmaps
+                LightmapGeneralData generalHeader;
+                read(srcFile, &generalHeader);
+                
+                std::cout << "Obj. lightmap starting offset: " <<  srcFile.tellg() << "\n";
+                std::cout << "\tGeneral Section:" << "\n";
+                std::cout << "\tLightmap type:\t" << (int) generalHeader.mTypeOfLightmap<< "\n";
+                std::cout << "\tLightmap no. parts:\t" << (int) generalHeader.mNuberOfParts<< "\n";
+                std::cout << "\tLightmap level ID:\t" << (int) generalHeader.mLevelId << "\n";
+                std::cout << "\tFloat A:\t" << generalHeader.mUnkA<< "\n";
+                std::cout << "\tFloat B:\t" << generalHeader.mUnkB<< "\n";
+
+
+
+                for(unsigned part = 0; part < generalHeader.mNuberOfParts; part++)
+                {
+                    uint16_t unkShit;
+                    read(srcFile, &unkShit);
+
+                    switch(generalHeader.mTypeOfLightmap)
+                    {
+
+
+                        case LIGHTMAP_TYPE_VERTEX:
+                        {
+                                std::cout << "Obj. lightmap starting offset: " <<  srcFile.tellg() << "\n";
+                                uint32_t numberOfVertices;
+                                read(srcFile, &numberOfVertices);
+                                std::cout << "\tVertices: \t" << numberOfVertices << "\n";
+                                
+
+                                
+                                uint32_t* arrayofRGBA = new uint32_t[numberOfVertices];
+                                read(srcFile, arrayofRGBA, sizeof(uint32_t)*numberOfVertices);
+                                //srcFile.read((char*)arrayofRGBA, (sizeof(uint32_t)*numberOfVertices));
+                                
+                        }
+                        break;
+                        case LIGHTMAP_TYPE_MAP:
+                        {
+                            uint16_t numberOfVertices;
+                            read(srcFile, &numberOfVertices);
+                            uint16_t numberOfFacets;
+                            read(srcFile, &numberOfFacets);
+
+                            std::cout << "\tVerties: \t" << numberOfVertices << "\n";
+                            std::cout << "\tFacets: \t" << numberOfFacets<< "\n";
+
+                            uint8_t flagIsDwordPresent;
+                            read(srcFile, &flagIsDwordPresent);
+
+                            std::cout << "\tFlag: \t" << (int) flagIsDwordPresent << "\n";
+
+                            uint32_t unkDword;
+                            if(flagIsDwordPresent)
+                                read(srcFile, &unkDword);
+
+
+                            uint32_t countOfSomething;
+                            read(srcFile, &countOfSomething);
+
+                            std::cout << "\tCount: \t" << (int) countOfSomething<< "\n";
+
+
+                            for(unsigned s = 0; s < countOfSomething; s++)
+                            {
+                                std::cout << "Float pos>>: " <<  srcFile.tellg() << "\n";
+                                uint32_t sizeA;
+                                read(srcFile, &sizeA);
+                                uint32_t sizeB;
+                                read(srcFile, &sizeB);
+                                std::cout << "\tSize: [" << (int) sizeA << "," << sizeB << "]\n";
+
+                                uint32_t sizeOfArray = sizeA*sizeB*3;
+                                uint8_t* arrayofRGB = new uint8_t[sizeOfArray];
+                                read(srcFile, arrayofRGB, sizeOfArray);
+
+                            }
+
+                            uint32_t countOfUVCoordinates; 
+                            read(srcFile, &countOfUVCoordinates);
+                            std::cout << "\tCount of UV coordinates: \t" << (int) countOfUVCoordinates<< "\n";
+                            
+                        }
+                        break;
+                    }
+                }
+                return;
+
+            }
+            return;
+        
+            uint16_t numberOfVertices;
+            read(srcFile, &numberOfVertices);
+
+            uint16_t numberOfLBMP;
+            read(srcFile, &numberOfLBMP);
+
+            uint16_t typeOfFollowing;
+            read(srcFile, &typeOfFollowing);
+
+
+            std::cout << "\t" << "Section2:\n";
+            std::cout << "\t\t" << "noVert:\t"<<numberOfVertices<<"\n";
+            std::cout << "\t\t" << "noLBMP:\t"<<numberOfLBMP<<"\n";
+            std::cout << "\t\t" << "typeFollows:\t"<<typeOfFollowing<<"\n";
+
+            uint8_t hasDword;
+            read(srcFile, &hasDword);
+			
+			
+            uint32_t countOfSomething;
+            read(srcFile, &countOfSomething);
+
+            uint32_t sizeA;
+            read(srcFile, &sizeA);
+
+            uint32_t sizeB;
+            read(srcFile, &sizeB);
+
+		
+            std::cout << "\t\t" << "Flag:\t"<<(int) hasDword<<"\n";
+            std::cout << "\t\t" << "SizeA:\t"<<sizeA<<"\n";
+            std::cout << "\t\t" << "SizeB:\t"<<sizeB<<"\n";
+            
+        }
+        break;
+
+
     }
 }
 
